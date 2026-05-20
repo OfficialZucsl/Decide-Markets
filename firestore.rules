@@ -94,7 +94,8 @@ service cloud.firestore {
     }
 
     function isValidMarket(data) {
-      return hasOnlyAllowedFields(['decision', 'kpi', 'question', 'category', 'institution', 'yesPoints', 'noPoints', 'status', 'createdAt']) &&
+      let allowed = ['decision', 'kpi', 'question', 'category', 'institution', 'yesPoints', 'noPoints', 'status', 'createdAt', 'seededBy'];
+      return hasOnlyAllowedFields(allowed) &&
         data.decision is string && data.decision.size() > 0 && data.decision.size() < 500 &&
         data.kpi is string && data.kpi.size() > 0 && data.kpi.size() < 500 &&
         data.question is string && data.question.size() > 0 && data.question.size() < 1000 &&
@@ -147,6 +148,11 @@ service cloud.firestore {
         (isAdmin() || 
          (!isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yesPoints', 'noPoints'])
          && resource.data.status == 'open'));
+    }
+
+    // Written only by Admin SDK (Cloud Function cron). Clients cannot read or write.
+    match /market_index/{indexId} {
+      allow read, write: if false;
     }
 
     match /trades/{tradeId} {
