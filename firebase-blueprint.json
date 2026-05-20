@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a registered user who can allocate points to markets.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique user ID" },
+        "name": { "type": "string", "description": "Display name of the user" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "role": { "type": "string", "enum": ["admin", "verified_student", "user"], "description": "Role for RBAC" },
+        "points": { "type": "number", "description": "Current points balance" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["uid", "name", "email", "role", "points", "createdAt"]
+    },
+    "Market": {
+      "title": "Market",
+      "description": "A decision market tying a policy decision to a KPI.",
+      "type": "object",
+      "properties": {
+        "decision": { "type": "string", "description": "The policy decision being evaluated" },
+        "kpi": { "type": "string", "description": "The target KPI" },
+        "question": { "type": "string", "description": "The actual question for the market" },
+        "category": { "type": "string", "description": "Category like Economy, Public Health" },
+        "institution": { "type": "string", "description": "The institution backing/resolving this market" },
+        "yesPoints": { "type": "number", "description": "Total points allocated to YES" },
+        "noPoints": { "type": "number", "description": "Total points allocated to NO" },
+        "status": { "type": "string", "enum": ["open", "closed", "resolved"], "description": "Current market state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["decision", "kpi", "question", "category", "institution", "yesPoints", "noPoints", "status", "createdAt"]
+    },
+    "Trade": {
+      "title": "Trade",
+      "description": "A record of points allocated by a user on a specific market.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who made the trade" },
+        "marketId": { "type": "string", "description": "The ID of the market" },
+        "position": { "type": "string", "enum": ["YES", "NO"], "description": "The outcome chosen" },
+        "points": { "type": "number", "description": "Amount of points spent" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Trade timestamp" }
+      },
+      "required": ["userId", "marketId", "position", "points", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles including their role and points balance."
+    },
+    "/markets/{marketId}": {
+      "schema": { "$ref": "#/entities/Market" },
+      "description": "Stores the configuration and current status of all decision markets."
+    },
+    "/trades/{tradeId}": {
+      "schema": { "$ref": "#/entities/Trade" },
+      "description": "Stores all trades historically for auditing and updates."
+    }
+  }
+}

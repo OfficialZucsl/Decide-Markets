@@ -1,0 +1,164 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required) - unique user ID, immutable
+    //   - name: string (required, < 100 chars) - Display name
+    //   - email: string (required, valid email) - Contact email
+    //   - role: string (required, 'admin', 'verified_student', 'user') - RBAC role
+    //   - points: number (required, >= 0) - Point balance
+    //   - createdAt: string (required) - ISO 8601 date, immutable
+    //
+    // Collection: markets
+    // Document ID: {marketId}
+    // Fields:
+    //   - decision: string (required, < 500 chars)
+    //   - kpi: string (required, < 500 chars)
+    //   - category: string (required, < 100 chars)
+    //   - institution: string (required, < 100 chars)
+    //   - yesPoints: number (required, >= 0)
+    //   - noPoints: number (required, >= 0)
+    //   - status: string (required, 'open', 'closed', 'resolved')
+    //   - createdAt: string (required)
+    //
+    // Collection: trades
+    // Document ID: {tradeId}
+    // Fields:
+    //   - userId: string (required) - reference to user who made trade
+    //   - marketId: string (required) - reference to market
+    //   - position: string (required, 'YES' or 'NO')
+    //   - points: number (required, > 0)
+    //   - createdAt: string (required)
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "chipetatexila@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'points', 'createdAt']) &&
+        data.uid is string &&
+        data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+        isValidEmail(data.email) && data.email.size() < 100 &&
+        data.role in ['admin', 'verified_student', 'user'] &&
+        data.points is number && data.points >= 0 &&
+        isValidDateString(data.createdAt);
+    }
+
+    function isValidMarket(data) {
+      return hasOnlyAllowedFields(['decision', 'kpi', 'question', 'category', 'institution', 'yesPoints', 'noPoints', 'status', 'createdAt']) &&
+        data.decision is string && data.decision.size() > 0 && data.decision.size() < 500 &&
+        data.kpi is string && data.kpi.size() > 0 && data.kpi.size() < 500 &&
+        data.question is string && data.question.size() > 0 && data.question.size() < 1000 &&
+        data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+        data.institution is string && data.institution.size() > 0 && data.institution.size() < 100 &&
+        data.yesPoints is number && data.yesPoints >= 0 &&
+        data.noPoints is number && data.noPoints >= 0 &&
+        data.status in ['open', 'closed', 'resolved'] &&
+        isValidDateString(data.createdAt);
+    }
+    
+    function isValidTrade(data) {
+      return hasOnlyAllowedFields(['userId', 'marketId', 'position', 'points', 'createdAt']) &&
+        data.userId is string &&
+        data.marketId is string &&
+        data.position in ['YES', 'NO'] &&
+        data.points is number && data.points > 0 &&
+        isValidDateString(data.createdAt);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Allow users to create their own profile, MUST be 'user' role by default unless admin creates
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+        uidUnchanged() && 
+        ((request.resource.data.role == 'user' && request.resource.data.points == 1500) || isAdmin());
+        
+      // Users can update their profile (e.g. points through trades), but cannot escalate their role
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && uidNotModified() &&
+        areImmutableFieldsUnchanged(['createdAt']) &&
+        ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+    }
+
+    match /markets/{marketId} {
+      // Markets are public to all authenticated users
+      allow read: if isAuthenticated();
+      
+      // Only admins can create markets
+      allow create: if isAdmin() && isValidMarket(request.resource.data);
+      
+      // Users can update yesPoints/noPoints when they trade, admins can update anything
+      // CRITICAL: We ensure normal users only update points
+      allow update: if isAuthenticated() && isValidMarket(request.resource.data) &&
+        areImmutableFieldsUnchanged(['decision', 'kpi', 'question', 'category', 'institution', 'createdAt']) &&
+        (isAdmin() || 
+         (!isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yesPoints', 'noPoints'])
+         && resource.data.status == 'open'));
+    }
+
+    match /trades/{tradeId} {
+      // Users can only read their own trades. Admins can read all.
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Users can create a trade referencing their own userId
+      allow create: if isAuthenticated() && isValidTrade(request.resource.data) &&
+        request.resource.data.userId == request.auth.uid;
+        
+      // Trades are immutable after creation
+      allow update, delete: if false;
+    }
+  }
+}
