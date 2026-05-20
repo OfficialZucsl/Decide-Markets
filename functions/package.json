@@ -1,0 +1,26 @@
+{
+  "name": "decide-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions:seedMarkets"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "@sparticuz/chromium": "^131.0.0",
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0",
+    "puppeteer-core": "^24.0.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2"
+  }
+}

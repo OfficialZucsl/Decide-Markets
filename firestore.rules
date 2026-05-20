@@ -93,6 +93,14 @@ service cloud.firestore {
         isValidDateString(data.createdAt);
     }
 
+    function isValidSeededBy(data) {
+      return !('seededBy' in data) ||
+        (data.seededBy is string &&
+         data.seededBy.size() > 0 &&
+         data.seededBy.size() < 50 &&
+         data.seededBy in ['cron']);
+    }
+
     function isValidMarket(data) {
       let allowed = ['decision', 'kpi', 'question', 'category', 'institution', 'yesPoints', 'noPoints', 'status', 'createdAt', 'seededBy'];
       return hasOnlyAllowedFields(allowed) &&
@@ -104,7 +112,8 @@ service cloud.firestore {
         data.yesPoints is number && data.yesPoints >= 0 &&
         data.noPoints is number && data.noPoints >= 0 &&
         data.status in ['open', 'closed', 'resolved'] &&
-        isValidDateString(data.createdAt);
+        isValidDateString(data.createdAt) &&
+        isValidSeededBy(data);
     }
     
     function isValidTrade(data) {
