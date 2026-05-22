@@ -1,11 +1,6 @@
 import { createHash } from 'crypto';
 import { initializeApp, cert, getApps, type App } from 'firebase-admin/app';
-import {
-  getFirestore,
-  type DocumentReference,
-  type Firestore,
-  type Transaction,
-} from 'firebase-admin/firestore';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import type { GeneratedMarket, SeedResult } from './types';
 
 const MAX_MARKETS_PER_RUN = 5;
@@ -71,7 +66,9 @@ export async function getOpenQuestionKeys(): Promise<Set<string>> {
       keys.add(normalizeQuestion(String(data.question)));
     }
     if (data.decision && data.kpi) {
-      keys.add(normalizeQuestion(`${data.decision}|${data.kpi}`));
+      keys.add(
+        normalizeQuestion(`${data.decision}|${data.kpi}`)
+      );
     }
   });
   return keys;
@@ -104,47 +101,6 @@ function filterDuplicates(
   return { toCreate, skippedDuplicates };
 }
 
-type DuplicateReason = 'duplicate_index' | 'duplicate_open_market';
-
-/**
- * Transactional dedupe: market_index plus live open markets (catches admin inserts
- * between the pre-query and this write).
- */
-async function findDuplicateInTransaction(
-  transaction: Transaction,
-  firestore: Firestore,
-  market: GeneratedMarket,
-  indexRef: DocumentReference
-): Promise<DuplicateReason | null> {
-  const indexSnap = await transaction.get(indexRef);
-  if (indexSnap.exists) {
-    return 'duplicate_index';
-  }
-
-  const questionQuery = firestore
-    .collection('markets')
-    .where('status', '==', 'open')
-    .where('question', '==', market.question)
-    .limit(1);
-  const questionSnap = await transaction.get(questionQuery);
-  if (!questionSnap.empty) {
-    return 'duplicate_open_market';
-  }
-
-  const decisionKpiQuery = firestore
-    .collection('markets')
-    .where('status', '==', 'open')
-    .where('decision', '==', market.decision)
-    .where('kpi', '==', market.kpi)
-    .limit(1);
-  const decisionKpiSnap = await transaction.get(decisionKpiQuery);
-  if (!decisionKpiSnap.empty) {
-    return 'duplicate_open_market';
-  }
-
-  return null;
-}
-
 /**
  * Persists markets using Firestore transactions and market_index for atomic dedupe.
  */
@@ -170,56 +126,56 @@ export async function seedMarketsToFirestore(
     const normalized = normalizeQuestion(market.question);
     const indexId = questionHash(normalized);
     const indexRef = firestore.collection('market_index').doc(indexId);
+
+    let duplicateInTxn = false;
     const marketRef = firestore.collection('markets').doc();
 
-    let duplicateReason: DuplicateReason | null = null;
+    try {
+      await firestore.runTransaction(async (transaction) => {
+        const indexSnap = await transaction.get(indexRef);
+        if (indexSnap.exists) {
+          duplicateInTxn = true;
+          return;
+        }
 
-    await firestore.runTransaction(async (transaction) => {
-      duplicateReason = await findDuplicateInTransaction(
-        transaction,
-        firestore,
-        market,
-        indexRef
-      );
-      if (duplicateReason) {
-        return;
+        const createdAt = new Date().toISOString();
+
+        transaction.set(indexRef, {
+          marketId: marketRef.id,
+          question: market.question,
+          createdAt,
+        });
+
+        transaction.set(marketRef, {
+          decision: market.decision,
+          kpi: market.kpi,
+          question: market.question,
+          category: market.category,
+          institution: market.institution,
+          yesPoints: market.yesPoints,
+          noPoints: market.noPoints,
+          status: market.status,
+          createdAt,
+          seededBy: 'cron',
+        });
+      });
+
+      if (duplicateInTxn) {
+        skippedDuplicates++;
+        console.log(
+          JSON.stringify({
+            stage: 'firestoreSeed',
+            ok: false,
+            reason: 'duplicate_index',
+            question: market.question.slice(0, 80),
+          })
+        );
+      } else {
+        marketIds.push(marketRef.id);
+        createdCount++;
       }
-
-      const createdAt = new Date().toISOString();
-
-      transaction.set(indexRef, {
-        marketId: marketRef.id,
-        question: market.question,
-        createdAt,
-      });
-
-      transaction.set(marketRef, {
-        decision: market.decision,
-        kpi: market.kpi,
-        question: market.question,
-        category: market.category,
-        institution: market.institution,
-        yesPoints: market.yesPoints,
-        noPoints: market.noPoints,
-        status: market.status,
-        createdAt,
-        seededBy: 'cron',
-      });
-    });
-
-    if (duplicateReason) {
-      skippedDuplicates++;
-      console.log(
-        JSON.stringify({
-          stage: 'firestoreSeed',
-          ok: false,
-          reason: duplicateReason,
-          question: market.question.slice(0, 80),
-        })
-      );
-    } else {
-      marketIds.push(marketRef.id);
-      createdCount++;
+    } catch (err) {
+      throw err;
     }
   }
 
