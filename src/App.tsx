@@ -7,9 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Wallet, ChevronDown, LogIn, Loader2 } from 'lucide-react';
 import { onAuthStateChanged, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
-<<<<<<< HEAD
 import { collection, onSnapshot, doc, getDocFromServer, runTransaction, query, setDoc } from 'firebase/firestore';
->>>>>>> ef0a1d4a3879abf62e35bfcc25c1ed00ec465b51
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
 import { calculateProbability, calculateNewShares } from './lib/lmsr';
 
