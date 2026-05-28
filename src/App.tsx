@@ -1,4 +1,3 @@
-@"
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -597,4 +596,3 @@ export default function App() {
     </div>
   );
 }
-"@ | Out-File -FilePath src/App.tsx -Encoding utf8
