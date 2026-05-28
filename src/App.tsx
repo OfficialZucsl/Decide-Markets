@@ -344,26 +344,44 @@ export default function App() {
           </div>
 
           <div className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-500">
-            <button onClick={() => { setCategoryFilter('Trending'); setSectorFilter(null); }} className={`transition-colors `${categoryFilter === 'Trending' ? 'text-blue-600' : 'hover:text-blue-600'}`}>Trending</button>
-            <button onClick={() => { setCategoryFilter('Breaking'); setSectorFilter(null); }} className={`transition-colors flex items-center space-x-1.5 `${categoryFilter === 'Breaking' ? 'text-blue-600' : 'hover:text-blue-600'}`}>
+            <button 
+              onClick={() => { setCategoryFilter('Trending'); setSectorFilter(null); }} 
+              className={`transition-colors ${categoryFilter === 'Trending' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+            >
+              Trending
+            </button>
+            <button 
+              onClick={() => { setCategoryFilter('Breaking'); setSectorFilter(null); }} 
+              className={`transition-colors flex items-center space-x-1.5 ${categoryFilter === 'Breaking' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+            >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
               <span className={categoryFilter === 'Breaking' ? 'text-blue-600' : 'text-gray-900'}>Breaking</span>
             </button>
-            <button onClick={() => { setCategoryFilter('Economy'); setSectorFilter(null); }} className={`transition-colors `${categoryFilter === 'Economy' ? 'text-blue-600' : 'hover:text-blue-600'}`}>Economy</button>
-            <button onClick={() => { setCategoryFilter('Finance'); setSectorFilter(null); }} className={`transition-colors `${categoryFilter === 'Finance' ? 'text-blue-600' : 'hover:text-blue-600'}`}>Finance</button>
+            <button 
+              onClick={() => { setCategoryFilter('Economy'); setSectorFilter(null); }} 
+              className={`transition-colors ${categoryFilter === 'Economy' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+            >
+              Economy
+            </button>
+            <button 
+              onClick={() => { setCategoryFilter('Finance'); setSectorFilter(null); }} 
+              className={`transition-colors ${categoryFilter === 'Finance' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+            >
+              Finance
+            </button>
 
             <div className="relative group py-4">
               <button
                 onClick={() => { setCategoryFilter('Governance'); setSectorFilter(null); }}
-                className={`flex items-center space-x-1 transition-colors `${categoryFilter === 'Governance' ? 'text-blue-600' : 'hover:text-blue-600 text-gray-900'}`}
+                className={`flex items-center space-x-1 transition-colors ${categoryFilter === 'Governance' ? 'text-blue-600' : 'hover:text-blue-600 text-gray-900'}`}
               >
                 <span>Governance</span>
                 <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform duration-300" />
               </button>
-              <div className="absolute top-full left-0 mt-[-8px] w-48 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 overflow-hidden">
+              <div className="absolute top-full left-0 mt-[-8px] w-48 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-40">
                 <div className="p-2 flex flex-col">
                   <button onClick={() => { setCategoryFilter('Institutions'); setSectorFilter(null); }} className="text-left px-4 py-2 hover:bg-gray-50 rounded-xl text-gray-900 transition-colors">Institutions</button>
                   <button onClick={() => { setCategoryFilter('Public Services'); setSectorFilter(null); }} className="text-left px-4 py-2 hover:bg-gray-50 rounded-xl text-gray-900 transition-colors">Public Services</button>
@@ -376,7 +394,12 @@ export default function App() {
               </div>
             </div>
 
-            <button onClick={() => { setCategoryFilter('Politics'); setSectorFilter(null); }} className={`transition-colors `${categoryFilter === 'Politics' ? 'text-blue-600' : 'hover:text-blue-600'}`}>Politics</button>
+            <button 
+              onClick={() => { setCategoryFilter('Politics'); setSectorFilter(null); }} 
+              className={`transition-colors ${categoryFilter === 'Politics' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+            >
+              Politics
+            </button>
           </div>
 
           <div className="flex items-center space-x-6">
@@ -415,7 +438,7 @@ export default function App() {
                 <button
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
-                  className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 `${
+                  className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 ${
                     timeFilter === filter
                       ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
@@ -432,7 +455,7 @@ export default function App() {
                 <button
                   key={sector}
                   onClick={() => { setSectorFilter(sector === sectorFilter ? null : sector); setCategoryFilter(null); }}
-                  className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 `${
+                  className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 ${
                     sectorFilter === sector
                       ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
@@ -515,7 +538,7 @@ export default function App() {
                     <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: ``${prob}%` }}
+                        animate={{ width: `${prob}%` }}
                         className="h-full bg-blue-600"
                       />
                     </div>
@@ -557,7 +580,7 @@ export default function App() {
                 <button
                   onClick={() => handleVote('YES', 100)}
                   disabled={isVoting || !user}
-                  className={`py-6 rounded-3xl font-bold text-2xl transition-all shadow-lg flex items-center justify-center `${
+                  className={`py-6 rounded-3xl font-bold text-2xl transition-all shadow-lg flex items-center justify-center ${
                     user
                       ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/30'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-transparent'
@@ -568,7 +591,7 @@ export default function App() {
                 <button
                   onClick={() => handleVote('NO', 100)}
                   disabled={isVoting || !user}
-                  className={`py-6 rounded-3xl font-bold text-2xl transition-all flex items-center justify-center `${
+                  className={`py-6 rounded-3xl font-bold text-2xl transition-all flex items-center justify-center ${
                     user
                       ? 'bg-gray-900 text-white hover:bg-black'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
