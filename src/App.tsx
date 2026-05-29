@@ -611,7 +611,6 @@ export default function App() {
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
                   className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 ${
-                  className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 ${
                     timeFilter === filter
                       ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
@@ -890,3 +889,4 @@ export default function App() {
     </div>
   );
 }
+```
