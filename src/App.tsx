@@ -6,16 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Wallet, ChevronDown, Loader2 } from 'lucide-react';
-import {
-  collection,
-  onSnapshot,
-  doc,
-  runTransaction,
-  query,
-  setDoc,
-} from 'firebase/firestore';
-
-import { db, handleFirestoreError, OperationType } from './firebase';
 import { calculateProbability, calculateNewShares } from './lib/lmsr';
 
 // --- Types ---
@@ -172,43 +162,9 @@ export default function App() {
     }
   }, []);
 
-  // Markets load immediately
+  // Markets load instantly from local seed data only
   useEffect(() => {
-    const q = query(collection(db, 'markets'));
-
-    const unsubscribeMarkets = onSnapshot(
-      q,
-      (snapshot) => {
-        const liveMarkets: Market[] = [];
-
-        snapshot.docs.forEach((d) => {
-          const data = d.data();
-
-          liveMarkets.push({
-            id: d.id,
-            question: data.question || data.decision + '? → ' + data.kpi,
-            decision: data.decision,
-            kpi: data.kpi,
-            yesPoints: data.yesPoints,
-            noPoints: data.noPoints,
-            category: data.category,
-            institution: data.institution,
-            status: data.status,
-          });
-        });
-
-        if (liveMarkets.length === 0) {
-          setMarkets(seedMarkets);
-        } else {
-          setMarkets(liveMarkets);
-        }
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'markets');
-      }
-    );
-
-    return () => unsubscribeMarkets();
+    setMarkets(seedMarkets);
   }, []);
 
   const handleSaveUsername = () => {
@@ -221,7 +177,7 @@ export default function App() {
     setShowUsernameModal(false);
   };
 
-  const handleVote = async (side: 'YES' | 'NO', amount: number) => {
+  const handleVote = (side: 'YES' | 'NO', amount: number) => {
     if (!selectedMarket || !username) {
       setShowUsernameModal(true);
       return;
@@ -229,153 +185,33 @@ export default function App() {
 
     setIsVoting(true);
 
-    const isSeedMarket = seedMarketIds.has(selectedMarket.id);
-
-    if (isSeedMarket) {
-      setMarkets((prev) =>
-        prev.map((m) => {
-          if (m.id === selectedMarket.id) {
-            const { newQYes, newQNo } = calculateNewShares(
-              m.yesPoints,
-              m.noPoints,
-              amount,
-              side === 'YES'
-            );
-
-            return {
-              ...m,
-              yesPoints: newQYes,
-              noPoints: newQNo,
-            };
-          }
-
-          return m;
-        })
-      );
-
-      setPoints((p) => p - amount);
-      setSelectedMarket(null);
-      setIsVoting(false);
-      return;
-    }
-
-    try {
-      const marketRef = doc(db, 'markets', selectedMarket.id);
-      const tradeRef = doc(collection(db, 'trades'));
-
-      const tradeData = {
-        username,
-        marketId: selectedMarket.id,
-        position: side,
-        points: amount,
-        createdAt: new Date().toISOString(),
-      };
-
-      await runTransaction(db, async (transaction) => {
-        const marketDoc = await transaction.get(marketRef);
-
-        if (!marketDoc.exists()) {
-          throw new Error('Market does not exist');
-        }
-
-        const currentYes = marketDoc.data().yesPoints;
-        const currentNo = marketDoc.data().noPoints;
-
-        const { newQYes, newQNo, sharesBought } =
-          calculateNewShares(
-            currentYes,
-            currentNo,
+    setMarkets((prev) =>
+      prev.map((m) => {
+        if (m.id === selectedMarket.id) {
+          const { newQYes, newQNo } = calculateNewShares(
+            m.yesPoints,
+            m.noPoints,
             amount,
             side === 'YES'
           );
 
-        transaction.update(marketRef, {
-          yesPoints: newQYes,
-          noPoints: newQNo,
-        });
+          return {
+            ...m,
+            yesPoints: newQYes,
+            noPoints: newQNo,
+          };
+        }
 
-        transaction.set(tradeRef, {
-          ...tradeData,
-          sharesBought,
-        });
-      });
+        return m;
+      })
+    );
 
-      setPoints((p) => p - amount);
-      setSelectedMarket(null);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'markets/trades');
-    } finally {
+    setPoints((p) => p - amount);
+    setSelectedMarket(null);
+
+    setTimeout(() => {
       setIsVoting(false);
-    }
-  };
-
-  const adminCurateMarkets = async () => {
-    if (username !== 'admin') return;
-
-    const simulatedLiveNews = [
-      {
-        decision:
-          'ECZ implements biometric voter verification nationwide',
-        kpi:
-          'Opposition petition rate drops by 40% post-elections',
-        question:
-          'If ECZ enforces biometric national verification next month, will post-election petitions drop 40%?',
-        category: 'Politics • Elections',
-        institution: 'Electoral Commission of Zambia',
-        yesPoints: 12000,
-        noPoints: 8000,
-        status: 'open',
-      },
-      {
-        decision:
-          'Parliament passes the revised Public Order Act',
-        kpi:
-          'Police-sanctioned opposition rallies increase by 25%',
-        question:
-          'If the new Public Order Act is enacted, will approved opposition rallies increase by 25% by Q4?',
-        category: 'Politics • Legal',
-        institution: 'Ministry of Home Affairs',
-        yesPoints: 9500,
-        noPoints: 10500,
-        status: 'open',
-      },
-      {
-        decision:
-          'Anti-Corruption Commission declares amnesty for asset recovery',
-        kpi:
-          'Over K500 million is recovered in 60 days',
-        question:
-          'If ACC announces a 60-day asset recovery amnesty, will over K500 million be returned?',
-        category: 'Politics • Transparency',
-        institution: 'Anti-Corruption Commission',
-        yesPoints: 15000,
-        noPoints: 5000,
-        status: 'open',
-      },
-    ];
-
-    try {
-      for (const market of simulatedLiveNews) {
-        const marketRef = doc(collection(db, 'markets'));
-
-        await setDoc(marketRef, {
-          ...market,
-          createdAt: new Date().toISOString(),
-        });
-      }
-
-      alert('Markets successfully pushed to Firestore.');
-    } catch (error) {
-      console.error(error);
-
-      handleFirestoreError(
-        error,
-        OperationType.WRITE,
-        'markets'
-      );
-
-      alert('Failed to push to Firestore.');
-    }
+    }, 300);
   };
 
   const filteredMarkets = markets.filter((market) => {
@@ -652,19 +488,6 @@ export default function App() {
                 </button>
               ))}
             </div>
-
-            {username === 'admin' && (
-              <div className="pt-8">
-                <button
-                  onClick={adminCurateMarkets}
-                  className="w-full text-left px-4 py-2.5 rounded-2xl font-semibold text-[11px] bg-black text-white hover:bg-gray-800 transition-all duration-300 flex items-center justify-between"
-                >
-                  <span>Admin: Curate News</span>
-
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                </button>
-              </div>
-            )}
           </div>
         </aside>
 
@@ -696,85 +519,78 @@ export default function App() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filteredMarkets.length > 0 ? (
-              filteredMarkets.map((market) => {
-                const prob =
-                  calculateProbability(
-                    market.yesPoints,
-                    market.noPoints
-                  ) * 100;
+            {filteredMarkets.map((market) => {
+              const prob =
+                calculateProbability(
+                  market.yesPoints,
+                  market.noPoints
+                ) * 100;
 
-                return (
-                  <motion.div
-                    key={market.id}
-                    layoutId={market.id}
-                    onClick={() => setSelectedMarket(market)}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ y: -6, scale: 1.02 }}
-                    transition={{ duration: 0.3 }}
-                    className="group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/15 overflow-hidden flex flex-col"
-                  >
-                    <div className="flex justify-between items-start mb-8">
-                      <div className="flex items-center space-x-2 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
-                        <ShieldCheck className="w-3 h-3 text-blue-600" />
+              return (
+                <motion.div
+                  key={market.id}
+                  layoutId={market.id}
+                  onClick={() => setSelectedMarket(market)}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
+                  className="group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/15 overflow-hidden flex flex-col"
+                >
+                  <div className="flex justify-between items-start mb-8">
+                    <div className="flex items-center space-x-2 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
+                      <ShieldCheck className="w-3 h-3 text-blue-600" />
 
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">
-                          {market.institution}
-                        </span>
-                      </div>
-
-                      <span className="text-xs font-bold text-gray-300 tracking-widest">
-                        {market.category}
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">
+                        {market.institution}
                       </span>
                     </div>
 
-                    <div className="flex-grow mb-8">
-                      <h3 className="text-xl font-semibold leading-snug text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                        {market.question}
-                      </h3>
+                    <span className="text-xs font-bold text-gray-300 tracking-widest">
+                      {market.category}
+                    </span>
+                  </div>
+
+                  <div className="flex-grow mb-8">
+                    <h3 className="text-xl font-semibold leading-snug text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                      {market.question}
+                    </h3>
+                  </div>
+
+                  <div className="mt-auto">
+                    <div className="flex items-baseline space-x-1 mb-4">
+                      <span className="text-6xl font-bold tracking-tighter">
+                        {Math.round(prob)}
+                      </span>
+
+                      <span className="text-2xl font-bold text-gray-400">
+                        %
+                      </span>
                     </div>
 
-                    <div className="mt-auto">
-                      <div className="flex items-baseline space-x-1 mb-4">
-                        <span className="text-6xl font-bold tracking-tighter">
-                          {Math.round(prob)}
-                        </span>
-
-                        <span className="text-2xl font-bold text-gray-400">
-                          %
-                        </span>
-                      </div>
-
-                      <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${prob}%` }}
-                          className="h-full bg-blue-600"
-                        />
-                      </div>
-
-                      <div className="mt-4 flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                        <span>Chance of Success</span>
-
-                        <span>
-                          {(
-                            market.yesPoints +
-                            market.noPoints
-                          ).toLocaleString()}{' '}
-                          Votes
-                        </span>
-                      </div>
+                    <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${prob}%` }}
+                        className="h-full bg-blue-600"
+                      />
                     </div>
-                  </motion.div>
-                );
-              })
-            ) : (
-              <div className="col-span-full py-20 text-center text-gray-400 font-medium">
-                No active markets found for this filter. AI
-                Agents are currently scraping the latest news...
-              </div>
-            )}
+
+                    <div className="mt-4 flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                      <span>Chance of Success</span>
+
+                      <span>
+                        {(
+                          market.yesPoints +
+                          market.noPoints
+                        ).toLocaleString()}{' '}
+                        Votes
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </main>
