@@ -7,6 +7,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Wallet, ChevronDown, Loader2 } from 'lucide-react';
 import { calculateProbability, calculateNewShares } from './lib/lmsr';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from './firebase';
 
 // --- Types ---
 interface Market {
@@ -164,8 +166,36 @@ export default function App() {
 
   // Markets load instantly from local seed data only
   useEffect(() => {
-    setMarkets(seedMarkets);
-  }, []);
+  const q = query(collection(db, 'markets'));
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      if (snapshot.empty) {
+        setMarkets(seedMarkets);
+        return;
+      }
+      const liveMarkets: Market[] = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          question: data.question,
+          decision: data.decision,
+          kpi: data.kpi,
+          yesPoints: data.yesPoints,
+          noPoints: data.noPoints,
+          category: data.category,
+          institution: data.institution,
+          status: data.status,
+        };
+      });
+      setMarkets(liveMarkets);
+    },
+    () => {
+      setMarkets(seedMarkets);
+    }
+  );
+  return () => unsubscribe();
+}, []);
 
   const handleSaveUsername = () => {
     const trimmed = tempUsername.trim();
