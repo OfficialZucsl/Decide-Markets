@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0283169058",
-  "appId": "1:990693473618:web:31298bd4e178aa1549ce8b",
-  "apiKey": "AIzaSyAZGIGYj6keq8BFbCwumK5uCqlBoMlZUH0",
-  "authDomain": "gen-lang-client-0283169058.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-7d3feeba-1d1d-4a80-aebb-ce505e969c62",
-  "storageBucket": "gen-lang-client-0283169058.firebasestorage.app",
-  "messagingSenderId": "990693473618",
-  "measurementId": ""
+  "projectId": "decision-markets",
+  "appId": "1:777768782912:web:afe3b1e2805af66c71a3a5",
+  "apiKey": "AIzaSyAGS6Dd4q1eyC5xk1oS9Q6p0qByLMlKOr0",
+  "authDomain": "decision-markets.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "decision-markets.firebasestorage.app",
+  "messagingSenderId": "777768782912",
+  "measurementId": "G-86SWNQ9P9Z"
 }
