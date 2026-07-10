@@ -248,10 +248,14 @@ export default function App() {
     let matchesCategory = true;
 
     if (categoryFilter) {
-      if (
-        categoryFilter === 'Trending' ||
-        categoryFilter === 'Breaking'
-      ) {
+      if (categoryFilter === 'Breaking') {
+  const createdAt = new Date((market as any).createdAt || 0);
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  matchesCategory = createdAt > sixHoursAgo;
+} else if (categoryFilter === 'Trending') {
+  const totalVotes = market.yesPoints + market.noPoints;
+  matchesCategory = totalVotes > 10000;
+}
         matchesCategory = true;
       } else if (categoryFilter === 'Governance') {
         matchesCategory = market.category
