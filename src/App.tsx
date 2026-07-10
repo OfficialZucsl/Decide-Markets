@@ -268,7 +268,7 @@ export default function App() {
       }
     }
 
-    let matchesSector = true;
+    ) matchesSector = true;
 
     if (sectorFilter) {
       matchesSector = market.category
