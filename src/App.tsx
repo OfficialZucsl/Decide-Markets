@@ -249,31 +249,22 @@ export default function App() {
 
     if (categoryFilter) {
       if (categoryFilter === 'Breaking') {
-  const createdAt = new Date((market as any).createdAt || 0);
-  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-  matchesCategory = createdAt > sixHoursAgo;
-} else if (categoryFilter === 'Trending') {
-  const totalVotes = market.yesPoints + market.noPoints;
-  matchesCategory = totalVotes > 10000;
-}
-        matchesCategory = true;
+        const createdAt = new Date((market as any).createdAt || 0);
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        matchesCategory = createdAt > sixHoursAgo;
+      } else if (categoryFilter === 'Trending') {
+        const totalVotes = market.yesPoints + market.noPoints;
+        matchesCategory = totalVotes > 10000;
       } else if (categoryFilter === 'Governance') {
-        matchesCategory = market.category
-          .toLowerCase()
-          .includes('governance');
+        matchesCategory = market.category.toLowerCase().includes('governance');
       } else {
-        matchesCategory = market.category
-          .toLowerCase()
-          .includes(categoryFilter.toLowerCase());
+        matchesCategory = market.category.toLowerCase().includes(categoryFilter.toLowerCase());
       }
     }
 
-    ) matchesSector = true;
-
+    let matchesSector = true;
     if (sectorFilter) {
-      matchesSector = market.category
-        .toLowerCase()
-        .includes(sectorFilter.toLowerCase());
+      matchesSector = market.category.toLowerCase().includes(sectorFilter.toLowerCase());
     }
 
     return matchesCategory && matchesSector;
