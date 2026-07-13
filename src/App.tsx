@@ -21,6 +21,7 @@ interface Market {
   category: string;
   institution: string;
   status: 'open' | 'closed' | 'resolved';
+  createdAt?: string;
 }
 
 const seedMarketIds = new Set([
@@ -186,6 +187,7 @@ export default function App() {
           category: data.category,
           institution: data.institution,
           status: data.status,
+          createdAt: data.createdAt,
         };
       });
       setMarkets(liveMarkets);
@@ -249,12 +251,12 @@ export default function App() {
 
     if (categoryFilter) {
       if (categoryFilter === 'Breaking') {
-        const createdAt = new Date((market as any).createdAt || 0);
+        const createdAt = new Date(market.createdAt || 0);
         const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
         matchesCategory = createdAt > sixHoursAgo;
       } else if (categoryFilter === 'Trending') {
         const totalVotes = market.yesPoints + market.noPoints;
-        matchesCategory = totalVotes > 10000;
+        matchesCategory = totalVotes >= 9000;
       } else if (categoryFilter === 'Governance') {
         matchesCategory = market.category.toLowerCase().includes('governance');
       } else {
