@@ -148,6 +148,7 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isVoting, setIsVoting] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   // Pseudonym System
   const [username, setUsername] = useState<string | null>(
@@ -274,6 +275,39 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FBFBFD] font-sans text-[#1D1D1F] antialiased">
+      <AnimatePresence>
+        {showWelcome && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-gray-900 text-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl border border-white/10"
+            >
+              <h2 className="text-4xl font-bold tracking-tight leading-[1.1] mb-6">
+                Tied to Decizions, <br />
+                <span className="text-blue-400">not just Outcomes.</span>
+              </h2>
+              <p className="text-gray-400 mb-10 text-lg leading-relaxed">
+                Welcome to Decide. We turn fuzzy governance into testable, optimizable decisions by tying clear KPIs to institutional actions.
+              </p>
+              <button
+                onClick={() => setShowWelcome(false)}
+                className="w-full bg-white text-black py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-colors"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center space-x-3">
