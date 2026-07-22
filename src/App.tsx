@@ -545,7 +545,7 @@ export default function App() {
             </motion.p>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredMarkets.map((market) => {
               const prob =
                 calculateProbability(
@@ -562,7 +562,7 @@ export default function App() {
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{ y: -6, scale: 1.02 }}
                   transition={{ duration: 0.3 }}
-                  className="group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/15 overflow-hidden flex flex-col"
+                  className="group relative bg-white border border-gray-100 rounded-[1.5rem] p-8 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/15 overflow-hidden flex flex-col"
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center space-x-2 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
@@ -636,7 +636,7 @@ export default function App() {
 
             <motion.div
               layoutId={selectedMarket.id}
-              className="relative bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl"
+              className="relative bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               <h3 className="text-3xl font-bold mb-10 leading-tight text-gray-900">
                 {selectedMarket.question}
