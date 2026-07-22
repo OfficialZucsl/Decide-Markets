@@ -460,6 +460,61 @@ export default function App() {
         </div>
       </nav>
 
+      {/* Mobile Horizontal Filters */}
+      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
+        {['Trending', 'Breaking', 'Economy', 'Finance', 'Politics', 'Institutions', 'Public Services', 'Candidates'].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => {
+              setCategoryFilter(cat === 'Candidates' ? 'Candidate' : cat);
+              setSectorFilter(null);
+            }}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              categoryFilter === (cat === 'Candidates' ? 'Candidate' : cat)
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-50 text-gray-500 border border-gray-100'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
+        {['All', 'Daily', 'Weekly'].map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setTimeFilter(filter)}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              timeFilter === filter
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-50 text-gray-500 border border-gray-100'
+            }`}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+
+      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
+        {['Mining', 'Agriculture', 'Manufacturing', 'ICT', 'Tourism', 'Services'].map((sector) => (
+          <button
+            key={sector}
+            onClick={() => {
+              setSectorFilter(sector === sectorFilter ? null : sector);
+              setCategoryFilter(null);
+            }}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+              sectorFilter === sector
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-50 text-gray-500 border border-gray-100'
+            }`}
+          >
+            {sector}
+          </button>
+        ))}
+      </div>
+
       <main className="max-w-7xl mx-auto px-6 pt-16 pb-24 flex flex-col md:flex-row gap-12 lg:gap-16">
         <aside className="w-full md:w-48 shrink-0">
           <div className="sticky top-28 flex flex-col space-y-8">
