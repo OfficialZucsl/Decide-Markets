@@ -182,7 +182,7 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isVoting, setIsVoting] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
 
   // Scroll Refs for Mobile Nav
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -328,39 +328,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FBFBFD] font-sans text-[#1D1D1F] antialiased">
-      <AnimatePresence>
-        {showWelcome && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xl"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-gray-900 text-white w-full max-w-lg rounded-3xl p-10 shadow-2xl border border-white/10"
-            >
-              <h2 className="text-4xl font-bold tracking-tight leading-[1.1] mb-6">
-                Tied to Decizions, <br />
-                <span className="text-blue-400">not just Outcomes.</span>
-              </h2>
-              <p className="text-gray-400 mb-10 text-lg leading-relaxed">
-                Most institutions make decisions based on politics. We turn fuzzy governance into testable, optimizable decisions by tying clear KPIs to institutional actions.
-              </p>
-              <button
-                onClick={() => setShowWelcome(false)}
-                className="w-full bg-white text-black py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-colors"
-              >
-                Dismiss
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center space-x-3">
@@ -735,31 +702,37 @@ export default function App() {
         </aside>
 
         <div className="flex-1 min-w-0">
-          <header className="mb-20">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-6xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
-            >
-              Tied to Decizions, <br />
-
-              <span className="text-blue-600">
-                not just Outcomes.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-gray-500 max-w-3xl font-medium"
-            >
-              Most institutions make decisions based on politics.
-              We turn fuzzy governance into testable,
-              optimizable decisions by tying clear KPIs to
-              institutional actions.
-            </motion.p>
-          </header>
+          <AnimatePresence>
+            {showWelcomeModal && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-12"
+              >
+                <div className="bg-blue-600 text-white rounded-3xl p-8 md:p-12 shadow-xl">
+                  <div className="max-w-2xl">
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+                      Tied to Decizions, <br />
+                      <span className="text-blue-200">not just Outcomes.</span>
+                    </h2>
+                    <p className="text-blue-100 text-lg md:text-xl font-medium mb-10 opacity-90">
+                      Most institutions make decisions based on politics.
+                      We turn fuzzy governance into testable,
+                      optimizable decisions by tying clear KPIs to
+                      institutional actions.
+                    </p>
+                    <button
+                      onClick={() => setShowWelcomeModal(false)}
+                      className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/20"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredMarkets.map((market) => {
