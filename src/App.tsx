@@ -708,28 +708,25 @@ export default function App() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="mb-12"
+                className="mb-8 relative bg-gray-900 text-white rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
               >
-                <div className="bg-blue-600 text-white rounded-3xl p-8 md:p-12 shadow-xl">
-                  <div className="max-w-2xl">
-                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
-                      Tied to Decizions, <br />
-                      <span className="text-blue-200">not just Outcomes.</span>
-                    </h2>
-                    <p className="text-blue-100 text-lg md:text-xl font-medium mb-10 opacity-90">
-                      Most institutions make decisions based on politics.
-                      We turn fuzzy governance into testable,
-                      optimizable decisions by tying clear KPIs to
-                      institutional actions.
-                    </p>
-                    <button
-                      onClick={() => setShowWelcomeModal(false)}
-                      className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition-all shadow-lg shadow-blue-900/20"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
+                <div className="max-w-2xl">
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+                    Tied to Decizions, <br className="hidden sm:block" />
+                    <span className="text-blue-400">not just Outcomes.</span>
+                  </h2>
+                  <p className="text-gray-400 font-medium text-sm sm:text-base leading-relaxed">
+                    Most institutions make decisions based on politics.
+                    We turn fuzzy governance into testable, optimizable
+                    decisions by tying clear KPIs to institutional actions.
+                  </p>
                 </div>
+                <button
+                  onClick={() => setShowWelcomeModal(false)}
+                  className="shrink-0 px-6 py-3 bg-white text-gray-900 rounded-full font-bold text-sm hover:bg-gray-100 transition-colors shadow-sm"
+                >
+                  Dismiss
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
