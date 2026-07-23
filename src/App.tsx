@@ -9,7 +9,8 @@ import { ShieldCheck, Wallet, ChevronDown, Loader2, ChevronUp, ChevronLeft, Chev
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { calculateProbability, calculateNewShares } from './lib/lmsr';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { db, auth } from './firebase';
 
 // --- Types ---
 interface Market {
@@ -183,6 +184,17 @@ export default function App() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isVoting, setIsVoting] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+  const [user, setUser] = useState(auth.currentUser);
+  const [userTrades, setUserTrades] = useState<any[]>([]);
+  const [votingSide, setVotingSide] = useState<'YES' | 'NO' | null>(null);
+  const [voteSuccess, setVoteSuccess] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Scroll Refs for Mobile Nav
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -269,6 +281,7 @@ export default function App() {
     }
 
     setIsVoting(true);
+    setVotingSide(side);
 
     setMarkets((prev) =>
       prev.map((m) => {
@@ -292,12 +305,25 @@ export default function App() {
       })
     );
 
+    setUserTrades((prev) => [
+      ...prev,
+      {
+        marketId: selectedMarket.id,
+        side,
+        points: amount,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
     setPoints((p) => p - amount);
-    setSelectedMarket(null);
+    setVoteSuccess(true);
 
     setTimeout(() => {
+      setVoteSuccess(false);
+      setVotingSide(null);
+      setSelectedMarket(null);
       setIsVoting(false);
-    }, 300);
+    }, 1200);
   };
 
   const filteredMarkets = markets.filter((market) => {
@@ -671,21 +697,11 @@ export default function App() {
                 Sectors
               </h3>
 
-              {[
-                'Mining',
-                'Agriculture',
-                'Manufacturing',
-                'ICT',
-                'Tourism',
-                'Services',
-              ].map((sector) => (
+              {['Mining', 'Agriculture', 'Manufacturing', 'ICT', 'Tourism', 'Services'].map((sector) => (
                 <button
                   key={sector}
                   onClick={() => {
-                    setSectorFilter(
-                      sector === sectorFilter ? null : sector
-                    );
-
+                    setSectorFilter(sector === sectorFilter ? null : sector);
                     setCategoryFilter(null);
                   }}
                   className={`text-left px-4 py-2.5 rounded-2xl font-semibold transition-all duration-300 ${
@@ -698,6 +714,23 @@ export default function App() {
                 </button>
               ))}
             </div>
+
+            {user && (
+              <div className="hidden md:flex flex-col space-y-1 w-full pt-4">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-4">Your Positions</h3>
+                <div className="px-5 py-4 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col space-y-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Active</span>
+                    <span className="text-2xl font-bold text-gray-900">{new Set(userTrades.map(t => t.marketId)).size}</span>
+                  </div>
+                  <div className="h-px bg-gray-50 w-full" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Potential Payout</span>
+                    <span className="text-lg font-bold text-emerald-500">{(userTrades.reduce((acc, t) => acc + t.points, 0) * 1.45).toLocaleString()} pts</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -838,28 +871,23 @@ export default function App() {
               </h3>
 
               <div className="grid grid-cols-2 gap-4 mb-8">
-                <button
+                <button 
                   onClick={() => handleVote('YES', 100)}
-                  disabled={isVoting}
-                  className="py-6 rounded-3xl font-bold text-2xl transition-all shadow-lg flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/30"
+                  disabled={isVoting || voteSuccess}
+                  className="py-4 sm:py-6 rounded-2xl sm:rounded-3xl font-bold text-xl sm:text-2xl transition-all shadow-lg flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/30 disabled:opacity-50"
                 >
-                  {isVoting ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    'Yes'
-                  )}
+                  {isVoting && votingSide === 'YES' ? (
+                    voteSuccess ? <Check className="w-8 h-8 text-white" strokeWidth={3} /> : <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : 'Yes'}
                 </button>
-
-                <button
+                <button 
                   onClick={() => handleVote('NO', 100)}
-                  disabled={isVoting}
-                  className="py-6 rounded-3xl font-bold text-2xl transition-all flex items-center justify-center bg-gray-900 text-white hover:bg-black"
+                  disabled={isVoting || voteSuccess}
+                  className="py-4 sm:py-6 rounded-2xl sm:rounded-3xl font-bold text-xl sm:text-2xl transition-all flex items-center justify-center bg-gray-900 text-white hover:bg-black disabled:opacity-50"
                 >
-                  {isVoting ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    'No'
-                  )}
+                  {isVoting && votingSide === 'NO' ? (
+                    voteSuccess ? <Check className="w-8 h-8 text-white" strokeWidth={3} /> : <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : 'No'}
                 </button>
               </div>
 
