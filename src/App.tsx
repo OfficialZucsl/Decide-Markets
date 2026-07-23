@@ -19,6 +19,7 @@ interface Market {
   question: string;
   yesPoints: number;
   noPoints: number;
+  volume: number;
   category: string;
   institution: string;
   status: 'open' | 'closed' | 'resolved';
@@ -45,6 +46,7 @@ const seedMarkets: Market[] = [
       'If BoZ hikes rates 200bps, will the Kwacha stay under 25/$ by June?',
     yesPoints: 7200,
     noPoints: 2800,
+    volume: 10000,
     category: 'Economy',
     institution: 'Bank of Zambia',
     status: 'open',
@@ -55,6 +57,7 @@ const seedMarkets: Market[] = [
       'If FISP maize subsidies end, will inflation drop below 10% by July?',
     yesPoints: 3500,
     noPoints: 6500,
+    volume: 10000,
     category: 'Finance',
     institution: 'Ministry of Finance',
     status: 'open',
@@ -65,6 +68,7 @@ const seedMarkets: Market[] = [
       'If Lusaka privatizes waste, will cholera cases drop 50% next rainy season?',
     yesPoints: 8900,
     noPoints: 1100,
+    volume: 10000,
     category: 'Public Services',
     institution: 'Ministry of Health',
     status: 'open',
@@ -75,6 +79,7 @@ const seedMarkets: Market[] = [
       "If the incumbent is re-elected, will their 'Promise-to-Action' legislative ratio exceed 60% in Year 1?",
     yesPoints: 4100,
     noPoints: 5900,
+    volume: 10000,
     category: 'Governance • Candidate',
     institution: 'Civic Tracker NGO',
     status: 'open',
@@ -85,6 +90,7 @@ const seedMarkets: Market[] = [
       'If the government waives import duties on solar panels, will solar adoption in rural areas increase by 30%?',
     yesPoints: 5000,
     noPoints: 5000,
+    volume: 10000,
     category: 'Services',
     institution: 'Ministry of Energy',
     status: 'open',
@@ -95,6 +101,7 @@ const seedMarkets: Market[] = [
       'If the new mining tax regime is implemented, will copper production exceed 1 million tonnes next year?',
     yesPoints: 6000,
     noPoints: 4000,
+    volume: 10000,
     category: 'Mining',
     institution: 'Chamber of Mines',
     status: 'open',
@@ -105,6 +112,7 @@ const seedMarkets: Market[] = [
       'If FISP is reformed to include electronic vouchers, will maize yields increase by 20%?',
     yesPoints: 5500,
     noPoints: 4500,
+    volume: 10000,
     category: 'Agriculture',
     institution: 'Ministry of Agriculture',
     status: 'open',
@@ -115,6 +123,7 @@ const seedMarkets: Market[] = [
       'If the national broadband policy is updated, will internet penetration reach 60% by year end?',
     yesPoints: 4000,
     noPoints: 6000,
+    volume: 10000,
     category: 'ICT',
     institution: 'ZICTA',
     status: 'open',
@@ -125,6 +134,7 @@ const seedMarkets: Market[] = [
       'If the new SEZs are operationalized, will manufacturing GDP contribution rise by 2%?',
     yesPoints: 4500,
     noPoints: 5500,
+    volume: 10000,
     category: 'Manufacturing',
     institution: 'Ministry of Commerce',
     status: 'open',
@@ -135,11 +145,34 @@ const seedMarkets: Market[] = [
       'If the visa waiver program is expanded, will tourist arrivals increase by 15% this year?',
     yesPoints: 5200,
     noPoints: 4800,
+    volume: 10000,
     category: 'Tourism',
     institution: 'Zambia Tourism Agency',
     status: 'open',
   },
 ];
+
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+};
+
+const generateTrendData = (marketId: string, currentProb: number) => {
+  const data = [];
+  let seed = marketId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  let prob = currentProb > 50 ? Math.max(10, currentProb - 20) : Math.min(90, currentProb + 20);
+  
+  for (let i = 0; i < 24; i++) {
+    data.push({ time: i, value: Math.max(0, Math.min(100, prob)) });
+    const diff = currentProb - prob;
+    const rand = seededRandom(seed++) * 10 - 5;
+    prob += (diff / (24 - i)) + rand;
+  }
+  
+  data.push({ time: 24, value: currentProb });
+  return data;
+};
 
 export default function App() {
   const [points, setPoints] = useState(1500);
@@ -150,6 +183,23 @@ export default function App() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isVoting, setIsVoting] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // Scroll Refs for Mobile Nav
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const timeRangeScrollRef = useRef<HTMLDivElement>(null);
+  const sectorScrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (
+    ref: React.RefObject<HTMLDivElement | null>,
+    direction: 'left' | 'right'
+  ) => {
+    if (ref.current) {
+      ref.current.scrollBy({
+        left: direction === 'left' ? -200 : 200,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   // Pseudonym System
   const [username, setUsername] = useState<string | null>(
@@ -186,6 +236,7 @@ export default function App() {
           kpi: data.kpi,
           yesPoints: data.yesPoints,
           noPoints: data.noPoints,
+          volume: (data.yesPoints || 0) + (data.noPoints || 0),
           category: data.category,
           institution: data.institution,
           status: data.status,
@@ -233,6 +284,7 @@ export default function App() {
             ...m,
             yesPoints: newQYes,
             noPoints: newQNo,
+            volume: newQYes + newQNo,
           };
         }
 
@@ -289,14 +341,14 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-gray-900 text-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl border border-white/10"
+              className="relative bg-gray-900 text-white w-full max-w-lg rounded-3xl p-10 shadow-2xl border border-white/10"
             >
               <h2 className="text-4xl font-bold tracking-tight leading-[1.1] mb-6">
                 Tied to Decizions, <br />
                 <span className="text-blue-400">not just Outcomes.</span>
               </h2>
               <p className="text-gray-400 mb-10 text-lg leading-relaxed">
-                Welcome to Decide. We turn fuzzy governance into testable, optimizable decisions by tying clear KPIs to institutional actions.
+                Most institutions make decisions based on politics. We turn fuzzy governance into testable, optimizable decisions by tying clear KPIs to institutional actions.
               </p>
               <button
                 onClick={() => setShowWelcome(false)}
@@ -312,9 +364,10 @@ export default function App() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-black rounded-[0.5rem] flex items-center justify-center">
-              <div className="w-2.5 h-2.5 bg-white rounded-full" />
-            </div>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 sm:w-7 sm:h-7">
+              <rect x="3" y="2" width="6" height="20" rx="0.5" className="fill-gray-900" />
+              <path fillRule="evenodd" clipRule="evenodd" d="M11.5 2C11.2239 2 11 2.22386 11 2.5V7.5C11 7.77614 11.2239 8 11.5 8H13C15.2091 8 17 9.79086 17 12C17 14.2091 15.2091 16 13 16H11.5C11.2239 16 11 16.2239 11 16.5V21.5C11 21.7761 11.2239 22 11.5 22H13C18.5228 22 23 17.5228 23 12C23 6.47715 18.5228 2 13 2H11.5Z" className="fill-blue-600" />
+            </svg>
 
             <span
               className="text-xl font-bold tracking-tight cursor-pointer"
@@ -496,62 +549,135 @@ export default function App() {
       </nav>
 
       {/* Mobile Horizontal Filters */}
-      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
-        {['Trending', 'Breaking', 'Economy', 'Finance', 'Politics', 'Institutions', 'Public Services', 'Candidates'].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => {
-              setCategoryFilter(cat === 'Candidates' ? 'Candidate' : cat);
-              setSectorFilter(null);
-            }}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              categoryFilter === (cat === 'Candidates' ? 'Candidate' : cat)
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-50 text-gray-500 border border-gray-100'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="md:hidden border-t border-gray-100/50 bg-white/50 backdrop-blur-xl flex items-center px-1">
+        <button
+          onClick={() => scroll(categoryScrollRef, 'left')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div
+          ref={categoryScrollRef}
+          className="flex-1 py-2.5 flex items-center space-x-6 overflow-x-auto no-scrollbar scroll-smooth"
+        >
+          {[
+            'Trending',
+            'Breaking',
+            'Economy',
+            'Finance',
+            'Politics',
+            'Institutions',
+            'Public Services',
+            'Candidates',
+          ].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                setCategoryFilter(cat === 'Candidates' ? 'Candidate' : cat);
+                setSectorFilter(null);
+              }}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                categoryFilter === (cat === 'Candidates' ? 'Candidate' : cat)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-50 text-gray-500 border border-gray-100'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => scroll(categoryScrollRef, 'right')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
-        {['All', 'Daily', 'Weekly'].map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setTimeFilter(filter)}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              timeFilter === filter
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-50 text-gray-500 border border-gray-100'
-            }`}
-          >
-            {filter}
-          </button>
-        ))}
+      <div className="md:hidden border-t border-gray-100/50 bg-white/50 backdrop-blur-xl flex items-center px-1">
+        <button
+          onClick={() => scroll(timeRangeScrollRef, 'left')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div
+          ref={timeRangeScrollRef}
+          className="flex-1 py-2.5 flex items-center space-x-6 overflow-x-auto no-scrollbar scroll-smooth"
+        >
+          {['All', 'Daily', 'Weekly'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setTimeFilter(filter)}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                timeFilter === filter
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-50 text-gray-500 border border-gray-100'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => scroll(timeRangeScrollRef, 'right')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="md:hidden overflow-x-auto flex gap-2 px-4 py-2 bg-white border-b border-gray-100 no-scrollbar">
-        {['Mining', 'Agriculture', 'Manufacturing', 'ICT', 'Tourism', 'Services'].map((sector) => (
-          <button
-            key={sector}
-            onClick={() => {
-              setSectorFilter(sector === sectorFilter ? null : sector);
-              setCategoryFilter(null);
-            }}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-              sectorFilter === sector
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-50 text-gray-500 border border-gray-100'
-            }`}
-          >
-            {sector}
-          </button>
-        ))}
+      <div className="md:hidden border-t border-gray-100/50 bg-white/50 backdrop-blur-xl flex items-center px-1">
+        <button
+          onClick={() => scroll(sectorScrollRef, 'left')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div
+          ref={sectorScrollRef}
+          className="flex-1 py-2.5 flex items-center space-x-6 overflow-x-auto no-scrollbar scroll-smooth"
+        >
+          {[
+            'Mining',
+            'Agriculture',
+            'Manufacturing',
+            'ICT',
+            'Tourism',
+            'Services',
+          ].map((sector) => (
+            <button
+              key={sector}
+              onClick={() => {
+                setSectorFilter(sector === sectorFilter ? null : sector);
+                setCategoryFilter(null);
+              }}
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                sectorFilter === sector
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-50 text-gray-500 border border-gray-100'
+              }`}
+            >
+              {sector}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => scroll(sectorScrollRef, 'right')}
+          className="p-2 text-gray-400 shrink-0"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
       <main className="max-w-7xl mx-auto px-6 pt-16 pb-24 flex flex-col md:flex-row gap-12 lg:gap-16">
-        <aside className="w-full md:w-48 shrink-0">
+        <aside className="hidden md:block w-48 shrink-0">
           <div className="sticky top-28 flex flex-col space-y-8">
             <div className="flex flex-col space-y-1">
               <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-4">
@@ -642,6 +768,7 @@ export default function App() {
                   market.yesPoints,
                   market.noPoints
                 ) * 100;
+              const trendData = generateTrendData(market.id, prob);
 
               return (
                 <motion.div
@@ -652,7 +779,7 @@ export default function App() {
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{ y: -6, scale: 1.02 }}
                   transition={{ duration: 0.3 }}
-                  className="group relative bg-white border border-gray-100 rounded-[1.5rem] p-8 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/15 overflow-hidden flex flex-col"
+                  className="group relative bg-white border border-gray-100 rounded-[1.5rem] p-6 cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden flex flex-col"
                 >
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center space-x-2 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
@@ -674,35 +801,42 @@ export default function App() {
                     </h3>
                   </div>
 
-                  <div className="mt-auto">
-                    <div className="flex items-baseline space-x-1 mb-4">
-                      <span className="text-6xl font-bold tracking-tighter">
-                        {Math.round(prob)}
-                      </span>
+                  {/* Sparkline Chart */}
+                  <div className="h-14 w-full mb-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData}>
+                        <YAxis domain={[0, 100]} hide />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#2563eb"
+                          strokeWidth={2}
+                          dot={false}
+                          isAnimationActive={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
 
-                      <span className="text-2xl font-bold text-gray-400">
-                        %
+                  <div className="mt-auto border-t border-gray-50 pt-4 flex items-center justify-between">
+                    <div className="text-sm font-semibold flex items-center space-x-1">
+                      <span className="text-blue-600">
+                        {Math.round(prob)}% YES
                       </span>
+                      {prob >= trendData[0].value ? (
+                        <ChevronUp
+                          className="w-4 h-4 text-emerald-500"
+                          strokeWidth={3}
+                        />
+                      ) : (
+                        <ChevronDown
+                          className="w-4 h-4 text-rose-500"
+                          strokeWidth={3}
+                        />
+                      )}
                     </div>
-
-                    <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${prob}%` }}
-                        className="h-full bg-blue-600"
-                      />
-                    </div>
-
-                    <div className="mt-4 flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                      <span>Chance of Success</span>
-
-                      <span>
-                        {(
-                          market.yesPoints +
-                          market.noPoints
-                        ).toLocaleString()}{' '}
-                        Votes
-                      </span>
+                    <div className="text-sm text-gray-400 font-medium">
+                      {market.volume.toLocaleString()} pts
                     </div>
                   </div>
                 </motion.div>
@@ -726,7 +860,8 @@ export default function App() {
 
             <motion.div
               layoutId={selectedMarket.id}
-              className="relative bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl max-h-[85vh] overflow-y-auto"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative bg-white w-full max-w-xl md:max-w-2xl lg:max-w-3xl rounded-[2.5rem] p-10 shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               <h3 className="text-3xl font-bold mb-10 leading-tight text-gray-900">
                 {selectedMarket.question}
