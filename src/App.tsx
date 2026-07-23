@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, Wallet, ChevronDown, Loader2 } from 'lucide-react';
+import { ShieldCheck, Wallet, ChevronDown, Loader2, ChevronUp, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { calculateProbability, calculateNewShares } from './lib/lmsr';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from './firebase';
@@ -820,3 +821,4 @@ export default function App() {
     </div>
   );
 }
+
